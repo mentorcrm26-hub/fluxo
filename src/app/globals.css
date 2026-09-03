@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --fundo: #0A0B0F;
+  --superficie: #121419;
+  --superficie-2: #181B22;
+  --superficie-3: #1F232B;
+  --borda: #23262F;
+  --borda-forte: #2E323C;
+  --texto: #F2F4F8;
+  --texto-2: #A0A6B4;
+  --texto-3: #6E7482;
+  --acento: #6A5AF0;
+  --acento-claro: #8B7CFF;
+  --acento-suave: rgba(106, 90, 240, 0.12);
+  --sucesso: #34D399;
+  --sucesso-suave: rgba(52, 211, 153, 0.12);
+  --alerta: #FBBF24;
+  --alerta-suave: rgba(251, 191, 36, 0.12);
+  --perigo: #FF6B6B;
+  --perigo-suave: rgba(255, 107, 107, 0.12);
+  --info: #4DA3FF;
+
+  --raio-p: 8px;
+  --raio-m: 12px;
+  --raio-g: 16px;
+  --raio-xg: 24px;
+
+  --sombra-1: 0 1px 2px rgba(0,0,0,0.28);
+  --sombra-2: 0 4px 16px rgba(0,0,0,0.32);
+  --sombra-3: 0 16px 48px rgba(0,0,0,0.44);
+}
+
+:root[data-tema="claro"] {
+  --fundo: #FAFAFB;
+  --superficie: #FFFFFF;
+  --superficie-2: #F4F5F7;
+  --superficie-3: #EDEFF3;
+  --borda: #E3E5EA;
+  --borda-forte: #CBD0D8;
+  --texto: #12141A;
+  --texto-2: #525A69;
+  --texto-3: #7C8492;
+  --acento: #5A48E8;
+  --acento-claro: #5A48E8;
+  --acento-suave: rgba(90, 72, 232, 0.10);
+  --sucesso: #11875A;
+  --sucesso-suave: rgba(17, 135, 90, 0.10);
+  --alerta: #B45309;
+  --alerta-suave: rgba(180, 83, 9, 0.10);
+  --perigo: #C8302F;
+  --perigo-suave: rgba(200, 48, 47, 0.10);
+  --info: #1D6FD4;
+}
+
+@layer base {
+  body {
+    background-color: var(--fundo);
+    color: var(--texto);
+    font-family: var(--fonte-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--fonte-display), var(--fonte-sans), sans-serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+.numero {
+  font-family: var(--fonte-mono), monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--borda-forte);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--texto-3);
+}

@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum StatusProjeto {
+  planejado
+  em_andamento
+  finalizado
+  arquivado
+}
+
+enum StatusTarefa {
+  a_fazer
+  em_andamento
+  concluida
+}
+
+model Projeto {
+  id                      String        @id @default(uuid())
+  nome                    String
+  cliente                 String?
+  descricao               String?
+  cor                     String        @default("violeta")
+  status                  StatusProjeto @default(planejado)
+  dataInicio              DateTime      @db.Date
+  dataFimPrevista         DateTime      @db.Date
+  concluidoEm             DateTime?
+  valorCentavos           Int
+  porcentagem             Int           @default(45)
+  recebimentoPrevistoPara DateTime?     @db.Date
+  recebidoEm              DateTime?     @db.Date
+  valorRecebidoCentavos   Int?
+  criadoEm                DateTime      @default(now())
+  atualizadoEm            DateTime      @updatedAt
+
+  tarefas     Tarefa[]
+  importacoes Importacao[]
+  linhas      LinhaImportada[]
+
+  @@index([status])
+  @@index([recebimentoPrevistoPara])
+  @@map("projetos")
+}
+
+model Tarefa {
+  id               String       @id @default(uuid())
+  projetoId        String
+  titulo           String
+  tituloTraduzido  String?
+  observacoes      String?
+  status           StatusTarefa @default(a_fazer)
+  prazo            DateTime?    @db.Date
+  ordem            Int          @default(0)
+  linhaOrigemId    String?      @unique
+  concluidaEm      DateTime?
+  criadoEm         DateTime     @default(now())
+
+  projeto     Projeto         @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  linhaOrigem LinhaImportada? @relation(fields: [linhaOrigemId], references: [id], onDelete: SetNull)
+
+  @@index([projetoId, status])
+  @@index([projetoId, ordem])
+  @@map("tarefas")
+}
+
+model Importacao {
+  id                String   @id @default(uuid())
+  projetoId         String
+  nomeArquivo       String
+  tamanhoBytes      Int
+  totalPaginas      Int
+  colunasDetectadas Json
+  colunasEscolhidas Json
+  mapeamento        Json
+  linhaCabecalho    Int
+  totalLinhas       Int
+  criadoEm          DateTime @default(now())
+
+  projeto Projeto          @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  linhas  LinhaImportada[]
+
+  @@index([projetoId])
+  @@map("importacoes")
+}
+
+model LinhaImportada {
+  id           String   @id @default(uuid())
+  importacaoId String
+  projetoId    String
+  numeroLinha  Int
+  dados        Json     // { "ENDEREÇO": "Rua das Palmeiras, 120", "BAIRRO": "Santo Amaro" }
+
+  importacao Importacao @relation(fields: [importacaoId], references: [id], onDelete: Cascade)
+  projeto    Projeto    @relation(fields: [projetoId], references: [id], onDelete: Cascade)
+  tarefa     Tarefa?
+
+  @@index([projetoId])
+  @@index([importacaoId])
+  @@map("linhas_importadas")
+}
+
+model Configuracao {
+  id                    Int      @id @default(1)
+  janelaRecebimentoDias Int      @default(10)
+  moeda                 String   @default("USD")
+  tema                  String   @default("sistema")
+  atualizadoEm          DateTime @updatedAt
+
+  @@map("configuracao")
+}
