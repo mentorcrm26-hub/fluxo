@@ -35,7 +35,7 @@ export function BarraInferior({ aoAbrirNovoProjeto }: BarraInferiorProps) {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-superficie/95 backdrop-blur-md border-t border-borda h-16 px-4 flex items-center justify-around">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-superficie/95 backdrop-blur-md border-t border-borda h-[calc(4rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] px-4 flex items-center justify-around select-none touch-manipulation">
       {/* Início */}
       <Link
         href={rotas[0].href}

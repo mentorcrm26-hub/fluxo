@@ -18,7 +18,7 @@ export function AppShell({ children }: AppShellProps) {
       <BarraLateral aoAbrirNovoProjeto={() => setModalNovoProjetoAberto(true)} />
 
       {/* Main Content Area */}
-      <main className="flex-1 min-w-0 pb-20 md:pb-8 flex flex-col items-center">
+      <main className="flex-1 min-w-0 pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-8 flex flex-col items-center">
         <div className="w-full max-w-[1440px] px-4 sm:px-6 lg:px-10 py-6 md:py-8">
           {children}
         </div>
