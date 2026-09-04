@@ -29,6 +29,7 @@ import { DadosArmazenamento, gerarDadosIniciais } from './seed';
 import { calcularRecebimentoPrevisto, derivarStatusRecebimento, diasAte } from '../prazo';
 import { obterHojeISO } from '../datas';
 import { traduzirDescricaoParaPtBr } from '../traducao/tradutor';
+import { calcularMinhaParteCentavos } from '../dinheiro';
 
 const CHAVE_STORAGE = 'fluxo:v1';
 
@@ -501,25 +502,29 @@ class RepositorioLocalImpl implements Repositorio {
     const anoAtual = hoje.getFullYear();
 
     projetosComResumo.forEach((p) => {
+      const porcentagem = typeof p.porcentagem === 'number' ? p.porcentagem : 45;
+      const minhaParte = calcularMinhaParteCentavos(p.valorCentavos, porcentagem);
+
       if (p.status === 'em_andamento') {
-        emExecucaoCentavos += p.valorCentavos;
+        emExecucaoCentavos += minhaParte;
         emExecucaoQuantidade += 1;
       }
 
       if (p.statusRecebimento === 'a_receber') {
-        aReceberCentavos += p.valorCentavos;
+        aReceberCentavos += minhaParte;
         aReceberQuantidade += 1;
       } else if (p.statusRecebimento === 'atrasado') {
-        atrasadoCentavos += p.valorCentavos;
+        atrasadoCentavos += minhaParte;
         atrasadoQuantidade += 1;
         // Projetos atrasados também constam como valores a receber
-        aReceberCentavos += p.valorCentavos;
+        aReceberCentavos += minhaParte;
         aReceberQuantidade += 1;
       } else if (p.statusRecebimento === 'recebido' && p.recebidoEm) {
         try {
           const dataReceb = new Date(p.recebidoEm);
           if (dataReceb.getMonth() === mesAtual && dataReceb.getFullYear() === anoAtual) {
-            recebidoNoMesCentavos += (p.valorRecebidoCentavos || p.valorCentavos);
+            const valorRecebido = p.valorRecebidoCentavos || p.valorCentavos;
+            recebidoNoMesCentavos += calcularMinhaParteCentavos(valorRecebido, porcentagem);
             recebidoNoMesQuantidade += 1;
           }
         } catch {
