@@ -10,6 +10,7 @@ import {
   useLinhas,
   useFinalizarProjeto,
   useReabrirProjeto,
+  useReceberProjeto,
   useAtualizarProjeto,
   useExcluirImportacao,
 } from '@/lib/dados/hooks';
@@ -23,9 +24,10 @@ import { ContagemRegressiva } from '@/componentes/financeiro/ContagemRegressiva'
 import { Tabs } from '@/componentes/ui/Tabs';
 import { Botao } from '@/componentes/ui/Botao';
 import { Dialog } from '@/componentes/ui/Dialog';
+import { Input } from '@/componentes/ui/Input';
 import { EstadoVazio } from '@/componentes/comum/EstadoVazio';
 import { formatarUSD, calcularMinhaParteCentavos } from '@/lib/dinheiro';
-import { formatarDataCurta, formatarDataDiaMes } from '@/lib/datas';
+import { formatarDataCurta, formatarDataDiaMes, obterHojeISO } from '@/lib/datas';
 import { useToast } from '@/componentes/ui/Toast';
 import {
   FileUp,
@@ -59,6 +61,7 @@ export default function DetalhesProjetoPage() {
 
   const finalizarProjeto = useFinalizarProjeto();
   const reabrirProjeto = useReabrirProjeto();
+  const receberProjeto = useReceberProjeto();
   const atualizarProjeto = useAtualizarProjeto();
   const excluirImportacao = useExcluirImportacao(projetoId);
 
@@ -66,6 +69,8 @@ export default function DetalhesProjetoPage() {
   const [modalEditarAberto, setModalEditarAberto] = useState(false);
   const [modalExcluirAberto, setModalExcluirAberto] = useState(false);
   const [modalFinalizarAberto, setModalFinalizarAberto] = useState(false);
+  const [modalReceberAberto, setModalReceberAberto] = useState(false);
+  const [dataRecebido, setDataRecebido] = useState(obterHojeISO());
   const [menuAcoesAberto, setMenuAcoesAberto] = useState(false);
 
   const setAba = (novaAba: string) => {
@@ -138,6 +143,19 @@ export default function DetalhesProjetoPage() {
     });
     sucesso(novoStatus === 'arquivado' ? 'Projeto arquivado.' : 'Projeto desarquivado.');
     setMenuAcoesAberto(false);
+  };
+
+  const handleConfirmarRecebimento = async () => {
+    try {
+      await receberProjeto.mutateAsync({
+        id: projeto.id,
+        recebidoEm: dataRecebido,
+      });
+      sucesso('Recebimento confirmado com sucesso!');
+      setModalReceberAberto(false);
+    } catch (err: any) {
+      erro('Erro ao registrar recebimento.', err.message || 'Tente novamente.');
+    }
   };
 
   const abasConfig = [
@@ -218,9 +236,20 @@ export default function DetalhesProjetoPage() {
 
               {menuAcoesAberto && (
                 <div
-                  className="absolute right-0 top-12 z-20 w-48 rounded-m bg-superficie border border-borda shadow-3 p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-120"
+                  className="absolute right-0 top-12 z-20 w-52 rounded-m bg-superficie border border-borda shadow-3 p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-120"
                   onClick={() => setMenuAcoesAberto(false)}
                 >
+                  {!isRecebido && (
+                    <button
+                      type="button"
+                      onClick={() => setModalReceberAberto(true)}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-p text-xs text-sucesso hover:bg-sucesso-suave text-left font-medium"
+                    >
+                      <Coins className="w-3.5 h-3.5 text-sucesso" />
+                      <span>Marcar como recebido</span>
+                    </button>
+                  )}
+
                   <button
                     type="button"
                     onClick={() => setModalEditarAberto(true)}
@@ -298,7 +327,25 @@ export default function DetalhesProjetoPage() {
             </Link>
           </div>
 
-          <div>
+          <div className="flex flex-wrap items-center gap-3">
+            {!isRecebido ? (
+              <Botao
+                variante="secundario"
+                onClick={() => setModalReceberAberto(true)}
+                iconeEsquerda={<Coins className="w-4 h-4 text-sucesso" />}
+                className="border-sucesso/30 hover:border-sucesso text-sucesso hover:bg-sucesso-suave font-semibold"
+              >
+                Marcar como Recebido
+              </Botao>
+            ) : (
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-m bg-sucesso-suave text-sucesso border border-sucesso/30 text-xs font-semibold">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>
+                  Recebido em {formatarDataCurta(projeto.recebidoEm)} ({formatarUSD(projeto.valorRecebidoCentavos || projeto.valorCentavos)})
+                </span>
+              </div>
+            )}
+
             {!isFinalizado ? (
               <Botao
                 variante="primario"
@@ -308,17 +355,19 @@ export default function DetalhesProjetoPage() {
                 Finalizar Projeto
               </Botao>
             ) : (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-texto-2">Projeto finalizado</span>
-                <Botao
-                  variante="secundario"
-                  tamanho="p"
-                  onClick={handleReabrir}
-                  iconeEsquerda={<RotateCcw className="w-3.5 h-3.5 text-texto-3" />}
-                >
-                  Reabrir
-                </Botao>
-              </div>
+              !isRecebido && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-texto-2">Projeto finalizado</span>
+                  <Botao
+                    variante="secundario"
+                    tamanho="p"
+                    onClick={handleReabrir}
+                    iconeEsquerda={<RotateCcw className="w-3.5 h-3.5 text-texto-3" />}
+                  >
+                    Reabrir
+                  </Botao>
+                </div>
+              )
             )}
           </div>
         </div>
@@ -459,6 +508,45 @@ export default function DetalhesProjetoPage() {
         aoFechar={() => setModalEditarAberto(false)}
         projetoParaEditar={projeto}
       />
+
+      {/* Modal de Confirmação de Recebimento */}
+      <Dialog
+        aberto={modalReceberAberto}
+        aoFechar={() => setModalReceberAberto(false)}
+        titulo="Marcar como Recebido"
+        descricao={`Confirmar recebimento do pagamento total de ${formatarUSD(projeto.valorCentavos)} (sua parte: ${formatarUSD(calcularMinhaParteCentavos(projeto.valorCentavos, projeto.porcentagem ?? 45))}) para "${projeto.nome}".`}
+        tamanho="p"
+        rodape={
+          <>
+            <Botao
+              type="button"
+              variante="fantasma"
+              onClick={() => setModalReceberAberto(false)}
+              disabled={receberProjeto.isPending}
+            >
+              Cancelar
+            </Botao>
+            <Botao
+              type="button"
+              variante="sucesso"
+              carregando={receberProjeto.isPending}
+              onClick={handleConfirmarRecebimento}
+              iconeEsquerda={<CheckCircle2 className="w-4 h-4" />}
+            >
+              Confirmar Recebimento
+            </Botao>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Input
+            rotulo="Data de Recebimento"
+            type="date"
+            value={dataRecebido}
+            onChange={(e) => setDataRecebido(e.target.value)}
+          />
+        </div>
+      </Dialog>
 
       {/* Diálogo de Exclusão de Projeto */}
       <DialogoExcluirProjeto
