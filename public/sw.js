@@ -1,6 +1,5 @@
-const CACHE_NAME = 'fluxo-pwa-v1';
+const CACHE_NAME = 'fluxo-pwa-v2';
 const ASSETS_STATIC = [
-  '/',
   '/manifest.webmanifest',
   '/favicon.png',
   '/icons/icon-192x192.png',
@@ -10,8 +9,15 @@ const ASSETS_STATIC = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_STATIC);
+    caches.open(CACHE_NAME).then(async (cache) => {
+      // Caching resiliente para não abortar a instalação do PWA caso algum arquivo falhe
+      for (const asset of ASSETS_STATIC) {
+        try {
+          await cache.add(asset);
+        } catch (err) {
+          console.warn('[PWA SW] Não foi possível pré-armazenar:', asset, err);
+        }
+      }
     })
   );
   self.skipWaiting();
@@ -34,7 +40,7 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
 
-  // Ignora chamadas de API do Prisma / backend dinâmico para não servir dados desatualizados
+  // Ignora chamadas de autenticação e API dinâmica para sempre consultar a rede
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request).catch(() => {
@@ -51,8 +57,8 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Se a resposta for válida, clonamos e salvamos no cache
-        if (response.status === 200) {
+        // Se a resposta for 200 e for do mesmo domínio, clonamos e salvamos no cache
+        if (response.status === 200 && response.type === 'basic') {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseClone);
@@ -66,9 +72,11 @@ self.addEventListener('fetch', (event) => {
           if (cachedResponse) {
             return cachedResponse;
           }
-          // Se for uma navegação HTML e não estiver em cache, retorna a página inicial
+          // Se for uma navegação HTML e não estiver em cache, retorna a página inicial ou offline
           if (event.request.mode === 'navigate') {
-            return caches.match('/');
+            return caches.match('/').then((homeResponse) => {
+              return homeResponse || new Response('Offline', { status: 503, statusText: 'Offline' });
+            });
           }
           return new Response('Offline', { status: 503, statusText: 'Offline' });
         });

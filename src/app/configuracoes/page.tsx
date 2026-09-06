@@ -6,7 +6,7 @@ import { AlternadorTema } from '@/componentes/layout/AlternadorTema';
 import { Botao } from '@/componentes/ui/Botao';
 import { Input } from '@/componentes/ui/Input';
 import { useToast } from '@/componentes/ui/Toast';
-import { RotateCcw, Save, Palette, Clock, Database, UploadCloud } from 'lucide-react';
+import { RotateCcw, Save, Palette, Clock, Database, UploadCloud, LogOut, Shield } from 'lucide-react';
 
 export default function ConfiguracoesPage() {
   const { sucesso, erro } = useToast();
@@ -94,6 +94,15 @@ export default function ConfiguracoesPage() {
       } catch (err: any) {
         erro('Erro ao restaurar dados.', err.message);
       }
+    }
+  };
+
+  const handleLogout = async () => {
+    if (window.confirm('Deseja realmente sair da sua conta e encerrar a sessão neste dispositivo?')) {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+      } catch {}
+      window.location.href = '/login';
     }
   };
 
@@ -205,7 +214,32 @@ export default function ConfiguracoesPage() {
         </div>
       )}
 
-      {/* Seção 4: Dados de Exemplo (Desenvolvimento) */}
+      {/* Seção 4: Sessão e Acesso */}
+      <div className="p-6 rounded-g bg-superficie border border-borda space-y-4 shadow-1">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-m bg-superficie-2 border border-borda flex items-center justify-center text-acento-claro">
+            <Shield className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-texto">Sessão e Autenticação</h2>
+            <p className="text-xs text-texto-2">
+              Sessão segura ativa com persistência para mobile e PWA (30 dias).
+            </p>
+          </div>
+        </div>
+
+        <div className="pt-2">
+          <Botao
+            variante="perigo"
+            onClick={handleLogout}
+            iconeEsquerda={<LogOut className="w-4 h-4" />}
+          >
+            Encerrar Sessão (Sair)
+          </Botao>
+        </div>
+      </div>
+
+      {/* Seção 5: Dados de Exemplo (Desenvolvimento) */}
       <div className="p-6 rounded-g bg-superficie border border-borda space-y-4 shadow-1">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-m bg-superficie-2 border border-borda flex items-center justify-center text-alerta">

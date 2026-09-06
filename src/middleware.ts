@@ -1,24 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  verificarTokenSessao,
+  comparacaoSegura,
+  NOME_COOKIE_SESSAO,
+} from '@/lib/auth';
 
-function comparacaoSegura(a: string, b: string): boolean {
-  if (a.length !== b.length) {
-    return false;
-  }
-  let resultado = 0;
-  for (let i = 0; i < a.length; i++) {
-    resultado |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return resultado === 0;
-}
-
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Permitir rota de healthcheck e arquivos estáticos sem autenticação
+  // 1. Permitir rotas públicas, healthcheck, autenticação e arquivos estáticos/PWA
   if (
     pathname === '/api/saude' ||
+    pathname.startsWith('/api/auth') ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/static') ||
+    pathname === '/sw.js' ||
+    pathname === '/manifest.webmanifest' ||
+    pathname === '/favicon.ico' ||
+    pathname === '/favicon.png' ||
+    pathname.startsWith('/icons/') ||
     pathname.includes('.')
   ) {
     return NextResponse.next();
@@ -40,39 +40,58 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const authHeader = req.headers.get('authorization');
+  // 2. Verificar Sessão Persistente via Cookie (Suporte Total a PWA Mobile e Desktop)
+  const tokenCookie = req.cookies.get(NOME_COOKIE_SESSAO)?.value;
+  const sessao = await verificarTokenSessao(tokenCookie);
 
-  if (!authHeader || !authHeader.startsWith('Basic ')) {
-    return new NextResponse('Acesso restrito. Autenticação necessária.', {
-      status: 401,
-      headers: {
-        'WWW-Authenticate': 'Basic realm="Fluxo"',
-      },
-    });
-  }
-
-  try {
-    const credenciaisBase64 = authHeader.split(' ')[1];
-    const credenciais = Buffer.from(credenciaisBase64, 'base64').toString('utf-8');
-    const [usuario, ...restoSenha] = credenciais.split(':');
-    const senha = restoSenha.join(':');
-
-    const usuarioValido = comparacaoSegura(usuario || '', usuarioEsperado);
-    const senhaValida = comparacaoSegura(senha || '', senhaEsperada);
-
-    if (usuarioValido && senhaValida) {
-      return NextResponse.next();
+  if (sessao.valido) {
+    // Se o usuário já está logado e tenta acessar a tela de login, redireciona para o painel
+    if (pathname === '/login') {
+      return NextResponse.redirect(new URL('/', req.url));
     }
-  } catch (err) {
-    // Falha ao decodificar credenciais
+    return NextResponse.next();
   }
 
-  return new NextResponse('Credenciais inválidas.', {
-    status: 401,
-    headers: {
-      'WWW-Authenticate': 'Basic realm="Fluxo"',
-    },
-  });
+  // 3. Se não estiver autenticado e estiver acessando a página de login, permite a exibição
+  if (pathname === '/login') {
+    return NextResponse.next();
+  }
+
+  // 4. Compatibilidade com HTTP Basic Auth (para integrações de API / scripts legados)
+  const authHeader = req.headers.get('authorization');
+  if (authHeader && authHeader.startsWith('Basic ')) {
+    try {
+      const credenciaisBase64 = authHeader.split(' ')[1];
+      const credenciais = Buffer.from(credenciaisBase64, 'base64').toString('utf-8');
+      const [usuario, ...restoSenha] = credenciais.split(':');
+      const senha = restoSenha.join(':');
+
+      const usuarioValido = comparacaoSegura(usuario || '', usuarioEsperado);
+      const senhaValida = comparacaoSegura(senha || '', senhaEsperada);
+
+      if (usuarioValido && senhaValida) {
+        return NextResponse.next();
+      }
+    } catch {
+      // Falha ao decodificar credenciais
+    }
+  }
+
+  // 5. Se não autenticado e for uma chamada de API interna, retorna erro 401 JSON
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.json(
+      { erro: 'Acesso restrito. Autenticação necessária.' },
+      { status: 401 }
+    );
+  }
+
+  // 6. Para navegação de páginas web, redireciona para a tela de Login moderna
+  const loginUrl = new URL('/login', req.url);
+  if (pathname !== '/') {
+    loginUrl.searchParams.set('redirect', pathname);
+  }
+
+  return NextResponse.redirect(loginUrl);
 }
 
 export const config = {

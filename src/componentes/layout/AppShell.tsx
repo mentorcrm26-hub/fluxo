@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { BarraLateral } from './BarraLateral';
 import { BarraInferior } from './BarraInferior';
 import { FormularioProjeto } from '../projeto/FormularioProjeto';
@@ -10,7 +11,13 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
+  const pathname = usePathname();
   const [modalNovoProjetoAberto, setModalNovoProjetoAberto] = useState(false);
+
+  // Se estiver na tela de login, renderiza tela cheia sem shell de navegação
+  if (pathname === '/login') {
+    return <>{children}</>;
+  }
 
   return (
     <div className="min-h-screen bg-fundo text-texto flex flex-col md:flex-row">
@@ -35,3 +42,4 @@ export function AppShell({ children }: AppShellProps) {
     </div>
   );
 }
+

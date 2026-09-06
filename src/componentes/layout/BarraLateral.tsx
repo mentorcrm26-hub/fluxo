@@ -9,6 +9,7 @@ import {
   Settings,
   Plus,
   Layers,
+  LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AlternadorTema } from './AlternadorTema';
@@ -41,6 +42,15 @@ export function BarraLateral({ aoAbrirNovoProjeto }: BarraLateralProps) {
       ativo: pathname === '/configuracoes',
     },
   ];
+
+  const handleLogout = async () => {
+    if (window.confirm('Deseja realmente sair da sua conta?')) {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+      } catch {}
+      window.location.href = '/login';
+    }
+  };
 
   return (
     <aside className="hidden md:flex flex-col justify-between w-[72px] lg:w-[260px] bg-superficie border-r border-borda h-screen sticky top-0 flex-shrink-0 z-30 transition-all duration-320 p-4">
@@ -115,6 +125,16 @@ export function BarraLateral({ aoAbrirNovoProjeto }: BarraLateralProps) {
         <div className="lg:hidden flex justify-center">
           <AlternadorTema compacto />
         </div>
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-3 py-2 rounded-m text-xs font-medium text-texto-3 hover:text-alerta hover:bg-alerta/10 transition-colors w-full outline-none focus-visible:ring-2 focus-visible:ring-alerta"
+          title="Encerrar Sessão"
+        >
+          <LogOut className="w-4 h-4 flex-shrink-0" />
+          <span className="hidden lg:inline">Sair da Conta</span>
+        </button>
       </div>
     </aside>
   );
