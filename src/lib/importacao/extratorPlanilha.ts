@@ -307,11 +307,16 @@ async function extrairDePdf(
     tituloLimpo = tituloLimpo
       .replace(/By accepting or performing some or all of the work described in this purchase or work order[\s\S]*/gi, '')
       .replace(/https?:\/\/[^\s]+/gi, '')
-      .replace(/Total\s+[\d,.]+\s+Description[\s\S]*/gi, '')
+      .replace(/\bTotal\s+(?:[\d,.]+\s+)?Description[\s\S]*/gi, '')
+      .replace(/\bTotal\s+Description[\s\S]*/gi, '')
+      .replace(/\b(?:FL|PROP)\d+\b[\s\S]*/gi, '')
+      .replace(/\|\s*[A-Z][a-z]+\s+[A-Z][a-z]+\s*\|?$/g, '')
+      .replace(/\b\d{5}(?:-\d{4})?\s*\|[\s\S]*/gi, '')
       .replace(/\b\d{1,2}\/\d{1,2}\/\d{4}\s+\d{1,2}:\d{2}:\d{2}\s*(AM|PM)?/gi, '')
       .replace(/\b(PO Closed\?|GL Review|Pending)\b/gi, '')
-      .replace(/\|\s*\|/g, '|')
+      .replace(/\|\s*\|+/g, '|')
       .replace(/\s+/g, ' ')
+      .replace(/^\|\s*|\s*\|$/g, '')
       .trim();
 
     // Remove número de quantidade duplicado no início (ex: "1 Front Exterior" -> "Front Exterior")

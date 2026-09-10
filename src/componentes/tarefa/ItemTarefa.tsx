@@ -26,7 +26,7 @@ export function ItemTarefa({
   const excluirTarefa = useExcluirTarefa(tarefa.projetoId);
 
   const isConcluida = tarefa.status === 'concluida';
-  const traducao = tarefa.tituloTraduzido || traduzirDescricaoParaPtBr(tarefa.titulo);
+  const traducao = traduzirDescricaoParaPtBr(tarefa.titulo || tarefa.tituloTraduzido || '');
   const temTraducaoDiferente = traducao && traducao.trim().toLowerCase() !== tarefa.titulo.trim().toLowerCase();
 
   const handleToggleStatus = (checked: boolean) => {

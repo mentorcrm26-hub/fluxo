@@ -10,6 +10,7 @@ import { EstadoVazio } from '../comum/EstadoVazio';
 import { useConcluirTarefas } from '@/lib/dados/hooks';
 import { useToast } from '../ui/Toast';
 import { Search, Plus, CheckSquare, Square, CheckCheck, ListFilter } from 'lucide-react';
+import { traduzirDescricaoParaPtBr } from '@/lib/traducao/tradutor';
 
 interface ListaTarefasProps {
   projetoId: string;
@@ -34,8 +35,9 @@ export function ListaTarefas({ projetoId, tarefas, carregando }: ListaTarefasPro
       if (busca.trim()) {
         const termo = busca.toLowerCase();
         const noTitulo = t.titulo.toLowerCase().includes(termo);
+        const naTraducao = (t.tituloTraduzido || traduzirDescricaoParaPtBr(t.titulo)).toLowerCase().includes(termo);
         const nasObs = t.observacoes ? t.observacoes.toLowerCase().includes(termo) : false;
-        if (!noTitulo && !nasObs) return false;
+        if (!noTitulo && !nasObs && !naTraducao) return false;
       }
 
       // Filtro de status

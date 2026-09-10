@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatarUSD } from '@/lib/dinheiro';
+import { traduzirDescricaoParaPtBr } from '@/lib/traducao/tradutor';
 
 interface PassoRevisaoItensProps {
   nomeArquivo: string;
@@ -182,14 +183,19 @@ export function PassoRevisaoItens({
                       </div>
 
                       {/* Tradução em Português BR abaixo da original */}
-                      {item.tituloTraduzido && (
-                        <div className="flex items-start gap-1.5 pt-0.5 text-xs text-acento-claro bg-acento-suave/30 p-2 rounded-m border border-acento/15">
-                          <span className="text-[10px] font-bold uppercase tracking-wider bg-acento-suave text-acento-claro px-1.5 py-0.5 rounded border border-acento/20 flex-shrink-0 mt-0.5">
-                            PT-BR
-                          </span>
-                          <span className="font-medium leading-relaxed">{item.tituloTraduzido}</span>
-                        </div>
-                      )}
+                      {(() => {
+                        const traducao = traduzirDescricaoParaPtBr(item.titulo || item.tituloTraduzido || '');
+                        const temTraducaoDiferente = traducao && traducao.trim().toLowerCase() !== item.titulo.trim().toLowerCase();
+                        if (!temTraducaoDiferente) return null;
+                        return (
+                          <div className="flex items-start gap-1.5 pt-0.5 text-xs text-acento-claro bg-acento-suave/30 p-2 rounded-m border border-acento/15">
+                            <span className="text-[10px] font-bold uppercase tracking-wider bg-acento-suave text-acento-claro px-1.5 py-0.5 rounded border border-acento/20 flex-shrink-0 mt-0.5">
+                              PT-BR
+                            </span>
+                            <span className="font-medium leading-relaxed">{traducao}</span>
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
 
