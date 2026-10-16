@@ -30,4 +30,4 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=deps /app/node_modules ./node_modules
 
 EXPOSE 3000
-CMD ["sh", "-c", "npx prisma db push --skip-generate && node server.js"]
+CMD ["sh", "-c", "npx prisma db push --skip-generate || echo 'AVISO: prisma db push falhou. Continuando inicializacao do servidor...'; node server.js"]
