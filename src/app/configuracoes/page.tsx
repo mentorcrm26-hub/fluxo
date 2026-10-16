@@ -6,7 +6,7 @@ import { AlternadorTema } from '@/componentes/layout/AlternadorTema';
 import { Botao } from '@/componentes/ui/Botao';
 import { Input } from '@/componentes/ui/Input';
 import { useToast } from '@/componentes/ui/Toast';
-import { RotateCcw, Save, Palette, Clock, Database, UploadCloud, LogOut, Shield } from 'lucide-react';
+import { RotateCcw, Save, Palette, Clock, Database, UploadCloud, LogOut, Shield, Download, FileUp } from 'lucide-react';
 
 export default function ConfiguracoesPage() {
   const { sucesso, erro } = useToast();
@@ -80,6 +80,50 @@ export default function ConfiguracoesPage() {
     } finally {
       setMigrando(false);
     }
+  };
+
+  const handleExportarBackup = () => {
+    try {
+      const raw = localStorage.getItem('fluxo:v1');
+      if (!raw) {
+        erro('Nenhum dado local encontrado para exportar.');
+        return;
+      }
+      const blob = new Blob([raw], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup-fluxo-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      sucesso('Backup baixado com sucesso!');
+    } catch (err: any) {
+      erro('Erro ao exportar backup.', err.message);
+    }
+  };
+
+  const handleImportarArquivoBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      try {
+        const conteudo = ev.target?.result as string;
+        const parsed = JSON.parse(conteudo);
+        if (!parsed.projetos) {
+          throw new Error('Arquivo de backup inválido. Não foram encontrados projetos nele.');
+        }
+        localStorage.setItem('fluxo:v1', conteudo);
+        setDadosLocaisExistem(true);
+        sucesso(
+          'Backup carregado com sucesso!',
+          `${parsed.projetos.length} projetos prontos. Clique em "Enviar dados locais para o servidor" para salvar no banco.`
+        );
+      } catch (err: any) {
+        erro('Erro ao ler arquivo de backup.', err.message);
+      }
+    };
+    reader.readAsText(file);
   };
 
   const handleRestaurarSeed = async () => {
@@ -186,22 +230,46 @@ export default function ConfiguracoesPage() {
         </p>
       </div>
 
-      {/* Seção 3: Migração de Dados Locais para Servidor */}
-      {dadosLocaisExistem && (
-        <div className="p-6 rounded-g bg-superficie border border-acento/40 space-y-4 shadow-1">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-m bg-acento/10 border border-acento/30 flex items-center justify-center text-acento">
-              <UploadCloud className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold text-texto">Migração de Dados para o Servidor</h2>
-              <p className="text-xs text-texto-2">
-                Foram detectados projetos salvos localmente neste navegador. Envie-os para o banco de dados oficial do servidor.
-              </p>
-            </div>
+      {/* Seção 3: Transferência e Migração de Dados */}
+      <div className="p-6 rounded-g bg-superficie border border-borda space-y-4 shadow-1">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-m bg-superficie-2 border border-borda flex items-center justify-center text-acento-claro">
+            <UploadCloud className="w-5 h-5" />
           </div>
+          <div>
+            <h2 className="text-base font-semibold text-texto">Transferência e Backup de Dados</h2>
+            <p className="text-xs text-texto-2">
+              Baixe um arquivo de backup com seus projetos locais ou restaure um backup para migrar para o servidor.
+            </p>
+          </div>
+        </div>
 
-          <div className="pt-2">
+        <div className="flex flex-wrap items-center gap-3 pt-2">
+          <Botao
+            variante="secundario"
+            onClick={handleExportarBackup}
+            iconeEsquerda={<Download className="w-4 h-4" />}
+          >
+            Baixar Backup (JSON)
+          </Botao>
+
+          <label className="inline-flex cursor-pointer items-center justify-center rounded-m border border-borda bg-superficie px-4 py-2 text-sm font-medium text-texto shadow-sm hover:bg-superficie-2 transition-colors">
+            <FileUp className="w-4 h-4 mr-2 text-acento-claro" />
+            Restaurar Arquivo de Backup (.json)
+            <input
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={handleImportarArquivoBackup}
+            />
+          </label>
+        </div>
+
+        {dadosLocaisExistem && (
+          <div className="mt-4 pt-4 border-t border-borda/60 space-y-2">
+            <p className="text-xs text-sucesso font-medium">
+              ✓ Dados detectados na memória deste navegador. Clique abaixo para enviá-los ao banco de dados:
+            </p>
             <Botao
               variante="primario"
               carregando={migrando}
@@ -211,8 +279,8 @@ export default function ConfiguracoesPage() {
               Enviar dados locais para o servidor
             </Botao>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Seção 4: Sessão e Acesso */}
       <div className="p-6 rounded-g bg-superficie border border-borda space-y-4 shadow-1">
